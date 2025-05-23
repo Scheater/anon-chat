@@ -2,37 +2,32 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Anon Chat 💬</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anon Chat</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <button id="themeToggle" aria-label="Theme wechseln" title="Dark / Light Mode">
-    <svg id="icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <!-- Sonne -->
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-    </svg>
-  </button>
+  <header>
+    <h1>Anon Chat</h1>
+    <button id="theme-toggle" aria-label="Dark/Light Mode wechseln" class="theme-toggle">
+      <!-- Mond SVG -->
+      <svg class="icon moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
+      </svg>
+      <!-- Sonne SVG (hidden by default) -->
+      <svg class="icon sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="display:none;">
+        <circle cx="12" cy="12" r="5"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M16.36 16.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M16.36 7.64l1.42-1.42"/>
+      </svg>
+    </button>
+  </header>
 
-  <h1>Anon Chat 💬</h1>
-  <p>Nachrichten werden nach 24 Stunden automatisch entfernt.</p>
+  <main>
+    <div id="chat" role="log" aria-live="polite" aria-relevant="additions"></div>
 
-  <!-- CHAT FENSTER -->
-  <div id="chat" class="chat"></div>
-
-  <!-- NACHRICHTEN BEREICH -->
-  <textarea id="message" placeholder="Deine Nachricht... (Shift + Enter für Zeilenumbruch)"></textarea>
-  <button id="sendBtn">Senden</button>
-
-  <footer>Open Source Chat via Supabase • <a href="#" style="color:#888">GitHub</a></footer>
+    <textarea id="message" placeholder="Schreibe deine Nachricht..." aria-label="Nachricht eingeben"></textarea>
+    <button id="send-btn">Senden</button>
+  </main>
 
   <script src="script.js"></script>
 </body>
