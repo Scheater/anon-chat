@@ -1,59 +1,101 @@
 const SUPABASE_URL = "https://zizkkhileflcroydfnrb.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppemtraGlsZWZsY3JveWRmbnJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5NDMxOTIsImV4cCI6MjA2MzUxOTE5Mn0.SRAaLgYcy3cLSmfGuNugurUg5TFUmk7lIDVCLHk9Vlk";
 
-const themeToggle = document.getElementById("themeToggle");
-const body = document.body;
+const chatEl = document.getElementById("chat");
+const messageInput = document.querySelector("textarea");
+const sendBtn = document.getElementById("send-btn");
+const themeToggleBtn = document.getElementById("theme-toggle");
 
-// Prüfe, ob User schon ein Theme gespeichert hat
-const savedTheme = localStorage.getItem("theme");
-if (savedTheme) {
-  body.classList.toggle("light", savedTheme === "light");
-  updateIcon(savedTheme);
-}
-
-themeToggle.addEventListener("click", () => {
-  const isLight = body.classList.toggle("light");
-  localStorage.setItem("theme", isLight ? "light" : "dark");
-  updateIcon(isLight ? "light" : "dark");
-});
-
-function updateIcon(theme) {
-  const svg = document.getElementById("icon");
-  if (theme === "light") {
-    // Mond-Symbol (einfach Sonne verstecken & Mond anzeigen)
-    svg.innerHTML = `
-      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/>
-    `;
+function updateThemeIcon() {
+  if (document.body.classList.contains("light-mode")) {
+    // Sonne
+    themeToggleBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#651fff" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="5" />
+        <g stroke="#651fff" stroke-width="2">
+          <line x1="12" y1="1" x2="12" y2="4"/>
+          <line x1="12" y1="20" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+          <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="4" y2="12"/>
+          <line x1="20" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+          <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+        </g>
+      </svg>`;
   } else {
-    // Sonne Symbol
-    svg.innerHTML = `
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-    `;
+    // Mond
+    themeToggleBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#b39ddb" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/>
+      </svg>`;
   }
 }
 
-// Chat Funktionen
+// Theme toggeln und lokal speichern
+function toggleTheme() {
+  document.body.classList.toggle("light-mode");
+  updateThemeIcon();
+  localStorage.setItem("theme", document.body.classList.contains("light-mode") ? "light" : "dark");
+}
 
-document.getElementById("sendBtn").addEventListener("click", sendMessage);
-document.getElementById("message").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
+// Lade Theme aus localStorage
+function loadTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "light") {
+    document.body.classList.add("light-mode");
+  } else {
+    document.body.classList.remove("light-mode");
   }
-});
+  updateThemeIcon();
+}
 
+// Nachrichten laden
+async function loadMessages() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc`, {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+      },
+    });
+    const data = await res.json();
+
+    // Filter: nur Nachrichten jünger als 24h
+    const now = new Date();
+    const filtered = data.filter(msg => {
+      const created = new Date(msg.created_at);
+      return (now - created) < 24 * 60 * 60 * 1000;
+    });
+
+    // Chatbereich leeren
+    chatEl.innerHTML = "";
+
+    // Nachrichten anzeigen (neueste unten)
+    filtered.reverse().forEach(msg => {
+      const div = document.createElement("div");
+      div.classList.add("msg");
+      div.innerHTML = `
+        <p>${escapeHtml(msg.text)}</p>
+        <small>${new Date(msg.created_at).toLocaleString()}</small>
+      `;
+      chatEl.appendChild(div);
+    });
+
+    // Scroll ganz nach unten
+    chatEl.scrollTop = chatEl.scrollHeight;
+
+  } catch (error) {
+    console.error("Fehler beim Laden der Nachrichten:", error);
+  }
+}
+
+// Nachricht senden
 async function sendMessage() {
-  const textarea = document.getElementById("message");
-  const text = textarea.value.trim();
+  const text = messageInput.value.trim();
   if (!text) return;
+
+  sendBtn.disabled = true;
 
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
@@ -61,54 +103,38 @@ async function sendMessage() {
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
       },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text }),
     });
-    textarea.value = "";
+    messageInput.value = "";
     loadMessages();
   } catch (error) {
     console.error("Fehler beim Senden:", error);
+  } finally {
+    sendBtn.disabled = false;
+    messageInput.focus();
   }
 }
 
-async function loadMessages() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=*`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`
-      }
-    });
-    const data = await res.json();
-    const chat = document.getElementById("chat");
-    chat.innerHTML = "";
-
-    const now = new Date();
-    const messages = data
-      .filter(msg => {
-        const created = new Date(msg.created_at);
-        const age = (now - created) / (1000 * 60 * 60); // Stunden
-        return age < 24;
-      })
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    for (const msg of messages) {
-      const div = document.createElement("div");
-      div.className = "message";
-      div.innerHTML = `<p>${escapeHtml(msg.text)}</p><small>${new Date(msg.created_at).toLocaleString()}</small>`;
-      chat.appendChild(div);
-    }
-  } catch (error) {
-    console.error("Fehler beim Laden:", error);
-  }
-}
-
-// Escape HTML, damit keine Scripts reinkommen
+// Hilfsfunktion für sichere Ausgabe
 function escapeHtml(text) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Event-Listener
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+themeToggleBtn.addEventListener("click", toggleTheme);
+
+// Initial
+loadTheme();
+loadMessages();
+setInterval(loadMessages, 10000); // alle 10 Sekunden aktualisieren
